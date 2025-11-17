@@ -1,7 +1,7 @@
 import email
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from datetime import DateT
+import datetime
 
 
 
@@ -12,6 +12,16 @@ class User(AbstractUser):
     email = models.EmailField(max_length=254, unique=True, blank=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    birth_date = models.DateField(blank=False, null=False)
+    status = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
+    
+    
+    def __str__(self):
+        return f"{self.username} {self.full_name} {self.status} {self.email}"
+    
+    
     
     
 
