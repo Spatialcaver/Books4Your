@@ -11,4 +11,4 @@ class Author(models.Model):
     
     
     def __str__(self):
-        return F'{self.id} {self.name}'
+        return F'{self.name}'
