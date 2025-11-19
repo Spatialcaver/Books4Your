@@ -3,10 +3,55 @@ from user.models import User
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, generics
-from user.serializer import UserSerializer, CreateUserSerializer
-from rest_framework.permissions import IsAuthenticated
+from user.serializer import UserSerializer, CreateUserSerializer, CustomTokenObtainPairSerializer
+from user.authentication import AuthenticationService
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.exceptions import TokenError
+
+
+from django.contrib.auth import get_user_model
+
 import json
+
+
+
+
+User = get_user_model()
+
+
+class SignInView(APIView):
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        auth_service = AuthenticationService()
+        signin = auth_service.signin(username, password)
+
+        if not signin:
+            raise AuthenticationFailed(
+                "Credenciais inválidas.", code=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # serializar usuário
+        user = UserSerializer(signin).data
+        refresh = RefreshToken.for_user(signin)
+
+
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "username": user.get("username")
+                
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class UserCreate(generics.ListCreateAPIView):
