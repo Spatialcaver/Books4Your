@@ -33,3 +33,5 @@ class ListBookView(generics.ListAPIView):
     queryset = Book.objects.all()
     
     serializer_class = BookSerializer
+    
+    OrderingFilter = ['categoria', 'author', 'status']
