@@ -15,12 +15,12 @@ class User(AbstractUser):
     email = models.EmailField(max_length=254, unique=True, blank=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    birth_date = models.DateField()
+    birth_date = models.DateField(blank=True, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     
-    REQUIRED_FIELDS = ['email', 'full_name', 'birth_date']
+    REQUIRED_FIELDS = ['email', 'full_name',  'password']
     
     
     def __str__(self):
