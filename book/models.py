@@ -82,7 +82,7 @@ LANGUAGE_CHOICES = (
 )
 
 class Book (models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, )
     title = models.CharField(max_length=100, blank=False, null=False)
     subtitle = models.CharField(max_length=100, blank=True, null=True)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
@@ -98,6 +98,10 @@ class Book (models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     status =models.CharField(max_length=10, choices=STATUS_CHOICES, default='Available', verbose_name='Book Status')
+    
+    
+    read_only_fields = ['id']
+
     
     def __str__(self):
         return f'{self.title} - by ({self.author.name})'   
