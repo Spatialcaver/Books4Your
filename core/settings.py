@@ -37,11 +37,36 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_spectacular',
     'author',
     'book', 
     'borrowing',
     'user',
 ]
+
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'BooksForYou API',
+    'DESCRIPTION': 'API para o sistema de gerenciamento de biblioteca (Desafio Backend Júnior).',
+    'VERSION': '1.0.0',
+    # Configura o esquema de segurança para JWT (Bearer Token)
+    'SECURITY': [
+        {
+            'BearerAuth': [],
+        }
+    ],
+    'COMPONENTS': {
+        'securitySchemes': {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            }
+        }
+    },
+}
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -155,9 +180,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+        'PAGE_SIZE': 10,
+    
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
 }
 
 
