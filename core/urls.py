@@ -9,4 +9,5 @@ urlpatterns = [
     path('users/', include('user.urls')),
     path('borrowings/', include('borrowing.urls')),
     path('books/', include('book.urls')),
+    path('authors/', include('author.urls')),
 ]

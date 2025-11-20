@@ -3,6 +3,8 @@ from book.models import Book
 from rest_framework import status, generics
 from book.serializer import BookSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from django_filters.rest_framework import DjangoFilterBackend 
+from .filters import BookFilter
 
 
 
@@ -28,6 +30,8 @@ class DeleteBookView(generics.DestroyAPIView):
     serializer_class = BookSerializer
     
 class ListBookView(generics.ListAPIView):
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = BookFilter
     permission_classes = [AllowAny]
     
     queryset = Book.objects.all()

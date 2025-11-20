@@ -1,4 +1,4 @@
-from django.urls import include, path
+from django.urls import  path
 from book.views import ListBookView, CreateBookView, UpdateBookView, DeleteBookView
 
 
