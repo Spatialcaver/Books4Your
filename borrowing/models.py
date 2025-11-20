@@ -38,6 +38,6 @@ class Borrowing(models.Model):
                 
                 book.save(update_fields=['status'])
             
-        read_only_fields = ['id']
+       
         def __str__(self):
             return f"{self.user} borrowed {self.book} on {self.borrow_date}"
