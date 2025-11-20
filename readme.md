@@ -1,6 +1,6 @@
 # 📚 BooksForYou - Sistema de Gerenciamento de Biblioteca
 
-## Desafio Backend Júnior
+
 
 Este projeto implementa uma API RESTful completa para gerenciamento de uma biblioteca, incluindo controle de usuários, livros, autores e empréstimos, utilizando **Django** e **Django Rest Framework (DRF)**.
 
@@ -18,7 +18,7 @@ Este projeto implementa uma API RESTful completa para gerenciamento de uma bibli
 
 1.  **Clone o Repositório:**
     ```bash
-    git clone [URL_DO_SEU_REPOSITÓRIO]
+    git clone [URL_DESTE_REPOSITÓRIO]
     cd BooksForYou
     ```
 
