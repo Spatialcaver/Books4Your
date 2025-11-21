@@ -3,6 +3,7 @@ from user.models import User
 from django.contrib.auth import get_user_model
 from borrowing.models import Borrowing
 from django.utils import timezone
+from datetime import timedelta
 from author.models import Author
 from django.db.models import Count
 
@@ -83,7 +84,67 @@ class CreateBorrowingSerializer(serializers.ModelSerializer):
         return data
     
 class UpdateBorrowingSerializer(serializers.ModelSerializer):
+    # Campo customizado para TRGGER a ação de renovação
+    renew = serializers.BooleanField(write_only=True, required=False, label="Renovar por 7 dias")
+
     class Meta:
         model = Borrowing
-        fields = ["return_date"]
-        read_only_fields = ["borrow_date",'id']
+        # return_date e status são permitidos para atualização normal ou renovação
+        fields = ["return_date", "status", "renew"] 
+        read_only_fields = ["borrow_date", 'id']
+
+    def validate(self, data):
+        instance = self.instance 
+        authenticated_user = self.context['request'].user
+        
+        # Lógica de Validação SÓ se a flag 'renew' estiver presente
+        if data.get('renew', False):
+            
+            # 1. Regra de Autorização (Usuário vs. Admin)
+            if instance.user != authenticated_user and not (authenticated_user.is_staff or authenticated_user.is_superuser):
+                raise serializers.ValidationError(
+                    {"detail": "Você não tem permissão para renovar empréstimos de outros usuários."}
+                )
+
+            # 2. Regra: O empréstimo deve estar ativo ('OUT')
+            if instance.status != 'OUT':
+                raise serializers.ValidationError(
+                    {"status": "Este empréstimo não está ativo para renovação (status diferente de 'Emprestado')."}
+                )
+            
+            # 3. Regra: O livro não pode estar reservado
+            if instance.book.status == 'Reserved':
+                raise serializers.ValidationError(
+                    {"book": f"O livro '{instance.book.title}' está reservado e não pode ser renovado."}
+                )
+            
+            # 4. Verifica se a data de devolução não está no passado (se houver)
+            if instance.return_date and instance.return_date < timezone.now().date():
+                 raise serializers.ValidationError(
+                    {"return_date": "O prazo de devolução já expirou. O livro precisa ser devolvido (status 'RET') antes de renovar."}
+                )
+            
+        return data
+
+    def update(self, instance, validated_data):
+        is_renewal = validated_data.pop('renew', False)
+
+        if is_renewal:
+            # Lógica de Renovação: Estende a data em 7 dias
+            
+            if instance.return_date:
+                instance.return_date += timedelta(days=7)
+            else:
+                # Se for o primeiro prazo, define a partir de hoje
+                instance.return_date = timezone.now().date() + timedelta(days=7)
+                
+            # Garante que a data de devolução seja o único campo salvo na renovação
+            instance.save(update_fields=['return_date'])
+            
+            # O status e a return_date fornecidos pelo usuário são ignorados aqui para a renovação
+            
+        else:
+            # Lógica de Atualização Normal (PATCH/PUT para status ou data manual)
+            instance = super().update(instance, validated_data)
+            
+        return instance
