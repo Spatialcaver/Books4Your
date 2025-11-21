@@ -7,16 +7,11 @@ from user.serializer import UserSerializer, CreateUserSerializer, CustomTokenObt
 from user.authentication import AuthenticationService
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
+from django.db.models import Prefetch
+from borrowing.models import Borrowing
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.exceptions import TokenError
-
-
 from django.contrib.auth import get_user_model
-
-import json
-
-
 
 
 User = get_user_model()
@@ -78,3 +73,14 @@ class UserDelete(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    
+    
+class UserWithActiveBorrowingList(generics.ListAPIView):
+    serializer_class = UserSerializer 
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Filtra usuários que possuem pelo menos um empréstimo com status 'OUT'
+        return User.objects.filter(
+            borrowing__status='OUT'
+        ).distinct()

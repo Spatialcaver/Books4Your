@@ -38,4 +38,4 @@ class ListBookView(generics.ListAPIView):
     
     serializer_class = BookSerializer
     
-    OrderingFilter = ['categoria', 'author', 'status']
+    OrderingFilter = ['title', 'publication_date', 'author__name','category', 'author', 'status']
