@@ -67,7 +67,7 @@ class UserCreate(APIView):
     )
     
     def post(self, request, *args, **kwargs):
-        serializer_class = CreateUserSerializer
+        serializer_class = CreateUserSerializer(data=request.data)
         queryset = User.objects.all()
         
         try:
