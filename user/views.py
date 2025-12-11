@@ -12,48 +12,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import    extend_schema
+from django.shortcuts import get_object_or_404 
 
 
 User = get_user_model()
-
-
-class SignInView(APIView):
-
-    permission_classes = [AllowAny]
-    
-    @extend_schema(
-        request=CreateUserSerializer,
-        responses={201: CreateUserSerializer},
-        description="Create a new user", 
-        tags=["User"]
-    )
-
-    def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
-
-        auth_service = AuthenticationService()
-        signin = auth_service.signin(username, password)
-
-        if not signin:
-            raise AuthenticationFailed(
-                "Credenciais inválidas.", code=status.HTTP_401_UNAUTHORIZED
-            )
-
-        # serializar usuário
-        user = UserSerializer(signin).data
-        refresh = RefreshToken.for_user(signin)
-
-
-        return Response(
-            {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "username": user.get("username")
-                
-            },
-            status=status.HTTP_200_OK,
-        )
 
 
 class UserCreate(APIView):
@@ -89,15 +51,12 @@ class UserList(APIView):
             tags=["User"]
         )
    
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         queryset = User.objects.filter(is_active=True)
-        serializer_class = UserSerializer
+        serializer = UserSerializer(queryset, many=True)
         
         try:
-            serializer_class.is_valid(raise_exception=True)
-            serializer_class.save()
-        
-            return Response(serializer_class.data, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -115,7 +74,7 @@ class UserUpdate(APIView):
         tags=["User"]
     )
     def put(self, request, *args, **kwargs):
-        serializer_class = UserSerializer
+        serializer_class = UserSerializer(data=request.data)
         
         try:
             serializer_class.is_valid(raise_exception=True)
@@ -135,7 +94,7 @@ class UserUpdate(APIView):
     )
    
     def patch(self, request, *args, **kwargs):
-        serializer_class = UserSerializer
+        serializer_class = UserSerializer(data=request.data)
         
         
         try:
@@ -160,12 +119,19 @@ class UserDelete(APIView):
     
     def delete(self, request, *args, **kwargs):
         queryset = User.objects.all()
-        serializer_class = UserSerializer
+       
         try:
-            serializer_class.is_valid(raise_exception=True)
-            serializer_class.save()
+            user = get_object_or_404(User, pk=kwargs.get('pk'))
+            
+            if user != request.user and not request.user.is_superuser:
+                 return Response(
+                     {"error": "Você não tem permissão para deletar este usuário."}, 
+                     status=status.HTTP_403_FORBIDDEN
+                 )
+                 
+            user.delete()
         
-            return Response(serializer_class.data, status=status.HTTP_200_OK)
+            return Response("User deleted successfully", status=status.HTTP_200_OK)
     
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -177,7 +143,7 @@ class UserWithActiveBorrowingList(APIView):
     queryset = User.objects.filter(borrowing__status='OUT').distinct()
 
     @extend_schema(...)
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         
         borrowings_active = self.queryset.all()
         

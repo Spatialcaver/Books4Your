@@ -112,16 +112,19 @@ class BorrowingListView(APIView):
         }
     )
     
-    def get_queryset(self):
+    def get(self, request, *args, **kwargs):
         user = self.request.user
         
+        if user.is_superuser:
+            queryset = Borrowing.objects.all()
+        
+        else:
+            queryset = Borrowing.objects.filter(user=self.request.user)
+    
         try:
-            if user.is_superuser:
-                return Borrowing.objects.all()
-            
-            else:
-                return Response(Borrowing.objects.filter(user=self.request.user, status=status.HTTP_200_OK))
-            
+            serializer = self.serializer_class(queryset, many=True)
+            return Response({"Emprestimos": serializer.data}, status=status.HTTP_200_OK)
+        
         except:
             return Response ("You do not have permission to perform this action.", status=status.HTTP_400_BAD_REQUEST)
     
@@ -137,7 +140,7 @@ class OverdueBorrowingListView(APIView):
                   }
                    )
     
-    def get_queryset(self):
+    def get(self, request, *args, **kwargs):
         serializer_class = BorrowingSerializer
         
         try:
