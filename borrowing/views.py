@@ -72,22 +72,21 @@ class UpdateBorrowingView(APIView):
         }
                    )   
         
-    def patch(self, request, pk):
-        serializer_class = UpdateBorrowingSerializer
+    def put(self, request, pk, *args, **kwargs):
+        serializer_class = UpdateBorrowingSerializer(data=request.data)
         
-        try:
+        try: 
             serializer_class.is_valid(raise_exception=True)
             serializer_class.save()
-            
             return Response(serializer_class.data, status=status.HTTP_200_OK)
-    
-    
+        
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
         
         
-    def patch(self, request, pk):
-        serializer_class = UpdateBorrowingSerializer
+    def patch(self, request, pk, *args, **kwargs):
+        serializer_class = UpdateBorrowingSerializer(data=request.data)
         
         try:
             serializer_class.is_valid(raise_exception=True)
@@ -144,10 +143,14 @@ class OverdueBorrowingListView(APIView):
         serializer_class = BorrowingSerializer
         
         try:
-            return Response(Borrowing.objects.filter(
+            queryset = Borrowing.objects.filter(
                 status='OUT', 
                 return_date__lt=timezone.now().date()
-            ).order_by('return_date'), status=status.HTTP_200_OK)
+            ).order_by('return_date')
+            
+            serializer = self.serializer_class(queryset, many=True)
+            
+            return Response({"Emprestimos atrasados": serializer.data}, status=status.HTTP_200_OK)
             
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
