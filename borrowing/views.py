@@ -5,7 +5,10 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
+from user.models import User
+from user.serializer import UserSerializer
 
 
 
@@ -22,12 +25,12 @@ class NewBorrowingView(APIView):
         }
     )
     
-    def post(self, request):
-        serializer_class = CreateBorrowingSerializer(data=request.data)
+    def post(self, request, *args, **kwargs):
+        serializer_class = CreateBorrowingSerializer(data=request.data, context={'request': request})
     
         try:
             serializer_class.is_valid(raise_exception=True)
-            serializer_class.save(user=request.user)
+            serializer_class.save()
             return Response(serializer_class.data, status=status.HTTP_201_CREATED)
        
         except Exception as e:
@@ -35,68 +38,58 @@ class NewBorrowingView(APIView):
 
     
 
+
+    
 class UpdateBorrowingView(APIView):
     serializer_class = UpdateBorrowingSerializer
     permission_classes = [IsAuthenticated]
     
-    
+   
     @extend_schema( 
         request=UpdateBorrowingSerializer,
         responses={200: UpdateBorrowingSerializer, 
         status.HTTP_400_BAD_REQUEST: {"type": "object", "properties": {"error": {"type": "string"}}}
-        
         }
-                   )
-    
+    )
     def put(self, request, pk):
-        serializer_class = UpdateBorrowingSerializer
+        borrowing = get_object_or_404(Borrowing, pk=pk)
         
-
+        serializer = self.serializer_class(borrowing, data=request.data, context={'request': request})
+        
         try:
-            serializer_class.is_valid(raise_exception=True)
-            serializer_class.save()
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             
-            return Response(serializer_class.data, status=status.HTTP_200_OK)
-    
+            return Response(serializer.data, status=status.HTTP_200_OK)
     
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
         
-        
+   
     @extend_schema(
         request=UpdateBorrowingSerializer,
         responses={200: UpdateBorrowingSerializer, 
         status.HTTP_400_BAD_REQUEST: {"type": "object", "properties": {"error": {"type": "string"}}}
-        
         }
-                   )   
+    )   
+    def patch(self, request, pk):
+        borrowing = get_object_or_404(Borrowing, pk=pk)
         
-    def put(self, request, pk, *args, **kwargs):
-        serializer_class = UpdateBorrowingSerializer(data=request.data)
+        serializer = self.serializer_class(borrowing, data=request.data, partial=True, context={'request': request})
         
         try: 
-            serializer_class.is_valid(raise_exception=True)
-            serializer_class.save()
-            return Response(serializer_class.data, status=status.HTTP_200_OK)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)  
+        
+        
+   
             
-        
-        
-    def patch(self, request, pk, *args, **kwargs):
-        serializer_class = UpdateBorrowingSerializer(data=request.data)
-        
-        try:
-            serializer_class.is_valid(raise_exception=True)
-            serializer_class.save()
-            
-            return Response(serializer_class.data, status=status.HTTP_200_OK)
-    
-    
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 
 class BorrowingListView(APIView):
@@ -129,28 +122,28 @@ class BorrowingListView(APIView):
     
     
 class OverdueBorrowingListView(APIView):
-    permission_classes = [IsAuthenticated] 
+    serializer_class = BorrowingSerializer 
+    permission_classes = [IsAuthenticated]
     
-    @extend_schema( 
-                  request=BorrowingSerializer,
-                  responses={200: BorrowingSerializer, 
-                  status.HTTP_400_BAD_REQUEST: {"type": "object", "properties": {"error": {"type": "string"}}}
-                  
-                  }
-                   )
-    
+    queryset = Borrowing.objects.filter(
+        status='OUT', 
+        return_date__lt=timezone.now().date()
+    ).distinct() 
+
+    @extend_schema(
+        request=BorrowingSerializer,
+        responses={200: BorrowingSerializer, 
+        status.HTTP_400_BAD_REQUEST: {"type": "object", "properties": {"error": {"type": "string"}}}
+        }
+    )
     def get(self, request, *args, **kwargs):
-        serializer_class = BorrowingSerializer
         
+        users_with_overdue_borrowing = self.queryset.all()
+            
         try:
-            queryset = Borrowing.objects.filter(
-                status='OUT', 
-                return_date__lt=timezone.now().date()
-            ).order_by('return_date')
-            
-            serializer = self.serializer_class(queryset, many=True)
-            
-            return Response({"Emprestimos atrasados": serializer.data}, status=status.HTTP_200_OK)
-            
+            serializer = self.serializer_class(users_with_overdue_borrowing, many=True) 
+        
+            return Response({"Users with overdue loans": serializer.data}, status=status.HTTP_200_OK)
+    
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

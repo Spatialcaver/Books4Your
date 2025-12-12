@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from user.models import User
+from borrowing.serializer import BorrowingSerializer
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -7,18 +8,22 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
+    
+    count_borrowings = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ['username', 'id', 'email', 'full_name']
-        
-        
+        fields = ['username', 'id', 'email', 'full_name', 'count_borrowings']
+
+    def get_count_borrowings(self, obj):
+        return obj.borrowing_set.filter(status='OUT').count()
+    
 class CreateUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     
     class Meta:
         model = User
-        fields = ['username', 'password', 'email', 'full_name']
-        
+        fields = ['username', 'password', 'email', 'full_name', 'id']
+        read_only_fields = ['id']
         
     def create(self, validated_data):
         user = User(

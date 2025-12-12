@@ -9,7 +9,9 @@ from django.db.models import Count
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
+    user  = serializers.SlugRelatedField(slug_field='full_name', read_only=True)
     class Meta:
+        
         model = Borrowing
         fields = '__all__' 
         read_only_fields = ['id']
@@ -22,7 +24,7 @@ class CreateBorrowingSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Borrowing
-        fields = ["user","book", "return_date"] 
+        fields = ["user","book", "return_date", "id"] 
         read_only_fields = ['id', 'borrow_date'] 
         
     def validate(self, data):

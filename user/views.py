@@ -2,14 +2,11 @@ from django.shortcuts import render
 from user.models import User
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status, generics
+from rest_framework import status
 from user.serializer import UserSerializer, CreateUserSerializer, CustomTokenObtainPairSerializer
-from user.authentication import AuthenticationService
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from borrowing.models import Borrowing
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import    extend_schema
 from django.shortcuts import get_object_or_404 
@@ -73,7 +70,9 @@ class UserUpdate(APIView):
         description="Update a user", 
         tags=["User"]
     )
-    def put(self, request, *args, **kwargs):
+    def put(self, request, pk, *args, **kwargs):
+    
+        user = get_object_or_404(User, pk=pk)
         serializer_class = UserSerializer(data=request.data)
         
         try:
@@ -92,9 +91,10 @@ class UserUpdate(APIView):
         description="Partially update a user", 
         tags=["User"]
     )
-   
-    def patch(self, request, *args, **kwargs):
-        serializer_class = UserSerializer(data=request.data)
+
+    def patch(self, request, pk, *args, **kwargs):
+        user = get_object_or_404(User, pk=pk)
+        serializer_class = UserSerializer(data=request.data, partial=True)
         
         
         try:
@@ -142,7 +142,12 @@ class UserWithActiveBorrowingList(APIView):
     permission_classes = [IsAuthenticated]
     queryset = User.objects.filter(borrowing__status='OUT').distinct()
 
-    @extend_schema(...)
+    @extend_schema(
+        request= UserSerializer,
+        responses={200: UserSerializer},
+        description="List users with active borrowings", 
+        tags=["User"]
+    )
     def get(self, request, *args, **kwargs):
         
         borrowings_active = self.queryset.all()

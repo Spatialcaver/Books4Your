@@ -6,5 +6,5 @@ urlpatterns = [
     
     path('list/', ListAuthorView.as_view(), name='list-authors'),
     path('create/', CreateAuthorView.as_view(), name='create-author'),
-    path('update/<int:pk>/', UpdateAuthorView.as_view(), name='update-author'),
+    path('update/<uuid:pk>/', UpdateAuthorView.as_view(), name='update-author'),
 ]
